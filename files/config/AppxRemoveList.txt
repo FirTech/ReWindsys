@@ -1,0 +1,28 @@
+# ReWindsys APPX 精简列表
+# 每行一个包名前缀，匹配时忽略大小写，# 开头为注释行
+
+Microsoft.Microsoft3DViewer
+Microsoft.549981C3F5F10
+Clipchamp.Clipchamp
+Microsoft.BingNews
+Microsoft.BingWeather
+Microsoft.GetHelp
+Microsoft.Getstarted
+Microsoft.SkypeApp
+Microsoft.MsPaint
+Microsoft.MicrosoftOfficeHub
+Microsoft.Office.OneNote
+Microsoft.MicrosoftSolitaireCollection
+Microsoft.MicrosoftStickyNotes
+Microsoft.People
+Microsoft.Todos
+Microsoft.Windows.Photos
+Microsoft.windowscommunicationsapps
+Microsoft.WindowsFeedbackHub
+Microsoft.WindowsMaps
+Microsoft.WindowsAlarms
+Microsoft.WindowsSoundRecorder
+Microsoft.ZuneMusic
+Microsoft.ZuneVideo
+Microsoft.OutlookForWindows
+Microsoft.MicrosoftTeams
