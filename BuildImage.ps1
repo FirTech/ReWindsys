@@ -245,31 +245,47 @@ function Build-BootableISO {
     $oscdimg = Join-Path $ScriptRoot 'utils\oscdimg\oscdimg.exe'
     if (-not (Test-Path $oscdimg)) { throw "找不到 oscdimg.exe: $oscdimg" }
 
+    $isoRoot = "$IsoDrive\"
+    $bootFiles = @('boot\etfsboot.com', 'efi\microsoft\boot\efisys.bin')
+    foreach ($bootFile in $bootFiles) {
+        $sourceBootFile = Join-Path $isoRoot $bootFile
+        if (-not (Test-Path -LiteralPath $sourceBootFile -PathType Leaf)) {
+            throw "源 ISO 缺少引导文件: $sourceBootFile"
+        }
+    }
+
     $staging = Join-Path $WorkDir 'iso_staging'
     $srcDir  = Join-Path $staging 'sources'
     New-Item $srcDir -ItemType Directory -Force | Out-Null
 
     Write-Step "复制 ISO 引导文件"
-    Get-ChildItem $IsoDrive -Exclude 'sources' | ForEach-Object {
+    Get-ChildItem -LiteralPath $isoRoot -Force | Where-Object { $_.Name -ne 'sources' } | ForEach-Object {
         Copy-Item $_.FullName $staging -Recurse -Force
     }
 
     Write-Step "复制 sources 目录（排除原 install 文件）"
-    Get-ChildItem "$IsoDrive\sources" |
+    Get-ChildItem -LiteralPath (Join-Path $isoRoot 'sources') -Force |
         Where-Object { $_.Name -notmatch '^install\.(wim|esd)$' } |
         ForEach-Object { Copy-Item $_.FullName $srcDir -Recurse -Force }
 
     Write-Step "复制封装好的 install 文件"
     Copy-Item $InstallFile $srcDir -Force
 
+    foreach ($bootFile in $bootFiles) {
+        $stagedBootFile = Join-Path $staging $bootFile
+        if (-not (Test-Path -LiteralPath $stagedBootFile -PathType Leaf)) {
+            throw "ISO 暂存目录缺少引导文件: $stagedBootFile"
+        }
+    }
+
     $isoName = "ReWindsys_Custom_$(Get-Date -Format yyMMdd).iso"
     $isoOut  = Join-Path $OutputDir $isoName
     Write-Step "调用 oscdimg 生成 ISO: $isoOut"
 
-    $bootData = '2#p0,e,b"{0}\boot\etfsboot.com"#pEF,e,b"{1}\efi\microsoft\boot\efisys.bin"' `
+    $bootData = '2#p0,e,b{0}\boot\etfsboot.com#pEF,e,b{1}\efi\microsoft\boot\efisys.bin' `
                 -f $staging, $staging
 
-    & $oscdimg -m -o -u2 -udfver102 "-bootdata:$bootData" $staging $isoOut
+    & $oscdimg -m -o -h -u2 -udfver102 "-bootdata:$bootData" $staging $isoOut
     if ($LASTEXITCODE -ne 0) { throw "oscdimg 失败，退出码: $LASTEXITCODE" }
 
     Write-Done "ISO 已生成: $isoOut"
@@ -312,6 +328,8 @@ Write-Phase "阶段 1/6：前置验证"
 $requiredFiles = @(
     "$FilesRoot\config\AppxRemoveList.txt",
     "$FilesRoot\registry\WRDR_Takeover.reg",
+    "$FilesRoot\Windsys_Setup\WTDR\Takeover.cmd",
+    "$FilesRoot\Windsys_Setup\WTDR\Sleep.vbs",
     "$FilesRoot\patch\Windsys.ini",
     "$FilesRoot\Windsys_Setup",
     "$FilesRoot\WSHub",
